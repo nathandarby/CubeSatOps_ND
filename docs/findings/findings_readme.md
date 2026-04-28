@@ -1,0 +1,1 @@
+Findings documents capture results — cross-mission analysis, key data observations, calibration outcomes. These are append-mostly, with new findings added as you go. Eventually some get promoted into methodology when they become stable.

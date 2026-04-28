@@ -1,0 +1,1 @@
+Progress is the working journal. Weekly or bi-weekly entries: what got done, what got stuck, what surprised you, what's next. Loose, conversational, not for external readers. This is where you process what you've been learning. Critical for a long-term project where you need to remember what you were thinking three months ago.

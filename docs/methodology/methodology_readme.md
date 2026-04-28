@@ -1,0 +1,1 @@
+Methodology documents the what and why of each technical component. These are stable documents that get refined as the methodology matures. When you publish, these become the basis for the methods section. Each file should have: the question it answers, the formulation, the physical/mathematical derivation, the assumptions, the limitations, references to validation.
