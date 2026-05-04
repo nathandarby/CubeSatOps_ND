@@ -63,6 +63,7 @@ Orbital ambiguity is the property of two satellites' *orbits themselves* — ind
 
 - In file `OAGT_POD.ipynb`, we are using historical data from the transporter-9 launch, starting with one TLE and propagating the orbit, adding perturbations, and trying to infer meaningful physical thresholds per element for observers/operators. 
 
+
 ## Layer 2 — Observer Ambiguity
 
 **Status:** Scaffolded. Detailed development in Section 4 of project work.

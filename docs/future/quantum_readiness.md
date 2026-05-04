@@ -1,0 +1,1 @@
+I think it is responsible to be aware and considerate of quantum algorithm development and it's possible implementations in this project. No claims are being made, only assessments and writing down ideas. This is to create the architecture to be "ambidextrious." 
