@@ -64,41 +64,86 @@ Orbital ambiguity is the property of two satellites' *orbits themselves* — ind
 - In file `OAGT_POD.ipynb`, we are using historical data from the transporter-9 launch, starting with one TLE and propagating the orbit, adding perturbations, and trying to infer meaningful physical thresholds per element for observers/operators. 
 
 
-## Layer 2 — Observer Ambiguity
+# Decision Tree for Pairwise Ambiguity (Single Element Framework)
+## Inclination
+#### Inclination Tree
+1) Layer 1 is geometrical. Start with Compute $|\Delta i|$: 
+    - if $|\Delta i| < \theta_i \rightarrow$ inclination ambiguous (proceed to layer 2)
+    - if $|\Delta i| \geq \theta_i \rightarrow$ discriminated, stop
+    - **Note**: $\theta_i$ is not yet derived 
 
-**Status:** Scaffolded. Detailed development in Section 4 of project work.
+2) Layer 2 is operational. 
+    - Start with compute $\Delta d_\perp = f(|\Delta i|, \text{ } \phi_{\text{GS}}, \text{ }i)$
+    - Compare $\Delta d_\perp$ agaisnt $r_{\text{vis}} = f(h, \text{ }\epsilon_\text{min})$, **Check r_vis notes**
+    - If $\Delta d_\perp > r_{\text{vis}} \rightarrow$ discriminated by pass occurence, stop
+    - If $\Delta d_\perp \leq r_{\text{vis}} \rightarrow $ pass is ambiguous, proceed to: 
+    1. Mean Anomaly (time dependence)
+    2. Doppler Curve Shape (function of angle approach)
+    3. Peak Elevation Difference (function of $\Delta d_\perp$)
+    4. Other Discriminating Operations
 
-Observer ambiguity quantifies whether two satellites are operationally distinguishable from a *specific* ground station during a *specific* pass. It depends on pass-window geometry (timing, peak elevation, duration), Doppler curve similarity, and angular separation in the sky during overlap.
+- **Note**: The visibility circle **can** act as a spatial filter or discriminator parameter. This depends on $\Delta d_{\perp}$. Since $\epsilon_{\text{min}}$ is not a universal constant, it is flexible and is a reflection of the team's requirements.
+    1) Antenna Clearance (physical obstructions)
+    2) Link-Budget Requirements (attenution increasing near horizon)
+    3) Noise Floor (atmospheric noise at low elevation)
+    4) Operational preferences (longer passes vs signal losses)
+- Sweep paramter $\epsilon_{min} \in \{...\}$ can run ambiguity assessment simultaneously and show the team which threshold converts their ambiguous pair into a discriminated one. 
 
-Two satellites in identical orbits but at different mean anomalies have low observer ambiguity (their passes are time-separated). Two satellites in slightly different orbits at the same mean anomaly have high observer ambiguity tonight (overlapping passes, similar Doppler), even though their orbits will diverge over time.
+## RAAN $\Delta \Omega$
+#### RAAN Tree 
+- Follows the same structure as inclination tree. The only differences are: 
+    1. **The displacement formula** scales by cos $\phi$ instead of (tan $\phi$ / tan $i$)
+    2. **The sensitivity direction** is east-west instead of north-south
+    3. **The threshold $\theta_{\Omega}$** is a different physical anchor, that still needs to be derived like $\theta_i$.
 
-Observer ambiguity is the metric that translates orbital structure into "what should the operator do tonight." It builds on pass prediction over the team's ground station, and is developed in detail in Section 4.
+- **Notes**: Because of J2 (Earth's oblateness) there is RAAN drift (precession), thus causing $\frac{d\Omega}{dt} \neq \text{constant}$. Pairwise altitude analysis updates RAAN drift information. 
 
----
+## Mean Anomaly $\Delta M$
+#### Mean Anomaly Tree
+- This analysis and decision branching differs from inclination and RAAN because **Mean Anomaly** does not change the orbit geometry at all. It tells you **where** in the orbit the satellite is at epoch. Thus, it does not have any **$\Delta d_\perp$** analog and $ \implies$ straight to operational layer.
+- It turns out to be more of a scheduling discriminator under both $\Delta i \text{ and } \Delta \Omega$ rather than a standalone tree. 
+- A **useful formula**: $$ \Delta M \implies \Delta  t_{pass} = (\frac{\Delta M}{360^\circ})  \cdot T $$ Compare to pass duration $\rightarrow$ either time spearates passes or doesn't. 
 
-## Layer 3 — Instantaneous Ambiguity
+## Altitude (semi-major axis $\Delta a$) 
+#### Altitude Tree 
+Is more interesting because it is time-dependent and relates to the **Mean Anomaly**. The key mechanism is: $$ \Delta a \rightarrow \Delta T$$ $\text{different orbital periods} \implies \text{ satellites drift apart in mean anomaly over time} \implies \Delta M \text{ grows as a function of }\Delta a \text{ and time elapsed}$ 
+- This means that **altitude** doesn't produce a static geometric displacement like **inclination** or **RAAN**, but rather produces a growing $\Delta M$. The two are coupled. 
+- $\Delta a$ doesn't need it's own decision tree, but rather feeds into $\Delta M$ as a time-dependent input. It is also important to note that RAAN drift depends on true anomaly which depends on altitude. 
+- The cleaner **framing** might be: $$ \Delta M(t) = \Delta M_0 + f(\Delta a, \text{ }t) $$ Where $\Delta M_0$ is the initial mean anomaly difference at TLE epoch and $f(\Delta a, \text{ }t)$ is the accumulated drift from altitude difference. 
+- **Notes**: This connects directly to BSTAR analysis, so it is worth cross-analyzing BSTAR, Mean Anomaly, and altitude as a single coupled system. 
 
-**Status:** Scaffolded. Likely a triggered/conditional layer.
+## Summarizing $i, \Omega, M, a$
+#### What TLE refresh gives for free:
+- Fresh $i, \Omega, M$ at epoch - low error accumulation
+- SGP4 propagation handles a, drag, J2 corrections internally
+- Pass windows, pointing geometry, doppler curves all fall out of propagation directly
 
-Layer 3 is invoked when Layer 1 or Layer 2 flags a pair as ambiguous and the operator wants short-horizon (~1 hour) validation before a contact attempt. It is essentially a refined check: given the pair's current state vectors propagated forward to the pass start, does the Layer 2 prediction still hold?
+#### What the framework adds on top:
+- $\Delta i \rightarrow \Delta d_\perp \rightarrow$ spatial discrimination relative to $r_{vis}$
+- $\Omega \rightarrow$ longitudinal track separation relative to $r_{vis}$
+- $\Delta M \rightarrow$ pass time separation relative to pass duration
+- $\Delta a \rightarrow$ easy read from mean motion in TLE line 2, direct altitude discriminator 
 
-In practice this layer may be largely redundant with Layer 2 if Layer 2's pass prediction is accurate enough. It is reserved for "further operational validation" cases where pre-pass refinement is needed.
+#### Where the analytical velocity model earns its place:
+- Doppler curve shape prediction - specifically the slope at zero crossing which is a function of $v$ and closest approach geometry
+- Pre-pass frequency planning without running full propagation
+- Connecting $\Delta B^*$ to long-term drift estimates 
 
----
+## Eccentricity $e$ and Argument of Perigee ($\omega$)
+- Assuming a constant inclination and RAAN, $\Delta e$ only stretches the orbit from/to circular from/to elliptical. This means perigee drops, apogee rises, while the semi-major axis (avg alt) stays constant. The satellite spends more time near apogee (slower) and less near perigee (faster) per Kepler's second law. 
+- For near circular LEO rideshare clusters $\Delta e \approx 0.001$ gives a radial variation of $$ \Delta r = a \cdot \Delta e \approx 6800 x 0.001 \approx 7 \text{ km } $$Which is small but not completely negligible and shows up as a slight altitue oscillation once per orbit rather than a constant offset $\Delta a$. 
+- **Identification**: Low km radial oscillation produces negligible ground track displacement and essentially no measurable Doppler signature difference compared to $\Delta i, \Delta \Omega, \text{ or } \Delta a$. 
+- **Long-term ops**: For a nearly circular LEO CubeSat, $e$ naturally damps towards zero over time via atmospheric drag anyway. Not really a parameter worth monitoring or acting on. Same as $\omega$. 
 
-## Open questions
+# Next Steps
+- Derive $\theta_i \text{ and } \theta_\Omega$ for ambiguity assessment 
+- Verify derived inclination and RAAN scaling functions for $\Delta d_{\perp, i} \text{ and } \Delta d_{\perp, \Omega}$ 
+- Refine the displacement vs. $r_{vis}$ decision making framework
+- Refine layer 1 and layer 2 definitions (geometrical vs operational)
+- Finalize/Summarize Single-Element perturbation analysis- Derive $\Delta B^*$ tree (last substantive single-element branch) 
+- Start Multi-Element perturbation analysis 
 
-- **Cross-mission threshold calibration.** Physical distinguishability thresholds need to be validated against T6, T7, T8, T9 data. The thresholds derived from first-principles orbital mechanics should match empirically observed discrimination outcomes; systematic mismatches indicate model corrections.
-- **Operator capability profiles.** Different operators have different effective floors (laser ranger vs hobbyist radio). The framework should support a small set of operator profiles that adjust thresholds. Defaults assume "typical small-team capability."
-- **High-eccentricity generalization.** The framework assumes near-circular orbits where ω and e are noise-dominated. For eccentric clusters (GTO rideshares, lunar transfers), ω and e become discriminating and the headline score should include them. Tschauner-Hempel or Yamanaka-Ankersen formalisms may be needed for the related Layer 2 work but not for Layer 1 element comparison.
-- **Maneuvering threshold.** The per-pair element-similarity standard deviation that constitutes "anomalous" maneuvering needs cross-mission calibration.
-- **Combination of Layer 1 with discriminators.** How does orbital ambiguity interact with the existing four-discriminator framework (altitude, BSTAR, quality score, minimum separation)? Discriminators 1 and 2 are essentially Layer 1 components (altitude is `Δa`, BSTAR is `ΔB*`); the combination should be made explicit rather than parallel.
 
----
 
-## References within project
 
-- `mission_analysis_test.ipynb` — Generalized analysis pipeline; produces `hist_df` and per-mission element distributions.
-- `Orbit_Analysis.ipynb`, Item 13 — Pairwise relative velocity analysis; foundation for Layer 2.
-- `HANDOFF.md` — Project state, cross-mission findings (T6-T9), discriminator framework.
-- `docs/decisions/2026-04-26_percentile_vs_scale.md` — Decision record for percentile-rank choice (forthcoming).
+
