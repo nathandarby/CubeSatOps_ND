@@ -199,6 +199,39 @@ $$ \alpha_{max} < \alpha_{beam} \text{ : Proceed to Layer 2} $$
 
 **IS max necessary for discrimination condition?** 
 
+# Brainstorming Ambiguity Extensions 
+#### Discrimination Extensions:
+1. Doppler difference curve       → Δṙ(t) from look vectors
+2. Peak elevation difference      → max(El1) - max(El2)
+3. Pass duration difference       → time above ε_min per satellite
+4. AOS/LOS timing difference      → when each enters/exits r_vis
+5. Signal strength difference     → function of slant range + elevation
+6. Angular velocity difference    → dα/dt, how fast separation changes
+#### Scheduling Extensions:
+7. Optimal contact window         → when α(t) is maximum during pass
+8. Pass overlap quantification    → fraction of time both visible
+9. Contact attempt prioritization → rank candidates by α_max
+10. Multi-GS coordination         → α(t) from multiple ground stations
+#### Statistical Extensions: 
+11. Ambiguity score distribution  → α_max across full candidate set
+12. Pair ranking                  → most to least ambiguous pairs
+13. Cluster analysis              → groups of mutually ambiguous satellites
+14. Temporal ambiguity evolution  → how α_max changes as TLEs refresh
+#### $\Delta B^*$:
+15. α_max drift over time         → as ΔB* drives Δa → ΔM growth
+16. Natural discrimination window → when α_max first exceeds α_beam
+17. Patience parameter            → how long to wait for self-discrimination
+#### Bayesian Extensions: 
+18. Contact attempt update        → P(identity | contact/no contact)
+19. Doppler match likelihood      → P(identity | Doppler curve shape)
+20. Prior from ΔB*/physical specs → P(identity | mass, area input)
+#### Visualization Extensions: 
+21. Sky plot                      → α(t) on azimuth/elevation polar plot
+22. Separation timeline           → α[k] over pass window per pair
+23. Fleet ambiguity heatmap       → pairwise α_max matrix
+24. Optimal ε_min sweep           → α_max vs ε_min for team guidance
+
+
 
 
 
