@@ -5,3 +5,5 @@
 - Use BSTAR (run analysis again), check ways to improve BSTAR predictions
 
 - Pass ambiguity is more of a operational discriminator 
+
+- circle visibility can be used strategically?
